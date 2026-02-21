@@ -32,7 +32,7 @@ public class GuardManagerTest {
     @BeforeEach
     void setUp() {
         plugin = mock(JavaPlugin.class, Mockito.RETURNS_DEEP_STUBS);
-        registry = mock(NPCRegistry.class, Mockito.RETURNS_DEEP_STUBS);
+        registry = mock(NPCRegistry.class);
         guardManager = new GuardManager(plugin, registry);
     }
 
@@ -45,7 +45,7 @@ public class GuardManagerTest {
         Player creator = mock(Player.class);
         when(creator.getLocation()).thenReturn(new Location(null, 0, 64, 0));
 
-        NPC npc = mock(NPC.class, Mockito.RETURNS_DEEP_STUBS);
+        NPC npc = mock(NPC.class);
         GuardTrait trait = mock(GuardTrait.class);
         when(registry.createNPC(EntityType.PLAYER, "TestGuard")).thenReturn(npc);
         when(npc.getTrait(GuardTrait.class)).thenReturn(trait);
@@ -69,7 +69,7 @@ public class GuardManagerTest {
         Player creator = mock(Player.class);
         when(creator.getLocation()).thenReturn(new Location(null, 10, 70, -5));
 
-        NPC npc = mock(NPC.class, Mockito.RETURNS_DEEP_STUBS);
+        NPC npc = mock(NPC.class);
         GuardTrait trait = mock(GuardTrait.class);
         when(registry.createNPC(EntityType.PLAYER, "OverrideGuard")).thenReturn(npc);
         when(npc.getTrait(GuardTrait.class)).thenReturn(trait);
@@ -99,4 +99,3 @@ public class GuardManagerTest {
         verify(withoutTrait).hasTrait(eq(GuardTrait.class));
     }
 }
-
