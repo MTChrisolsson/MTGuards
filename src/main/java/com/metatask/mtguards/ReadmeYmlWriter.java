@@ -60,6 +60,7 @@ public class ReadmeYmlWriter {
             permissions.put("mtguards.admin.pattern", "Set patrol pattern from WorldEdit selection");
             permissions.put("mtguards.admin.info", "View guard info");
             permissions.put("mtguards.admin.setlabel", "Set guard label (alias)");
+            permissions.put("mtguards.admin.setname", "Change guard display name");
             permissions.put("mtguards.safe", "Players with this are never attacked");
             permissions.put("mtguards.hostile", "Players with this may be attacked when attackPlayers=false");
             yaml.set("permissions", permissions);
@@ -79,6 +80,7 @@ public class ReadmeYmlWriter {
             commands.put("/mtguards pattern <id|name|label> <fromselection|clear>", "Set patrol pattern from WorldEdit selection or clear");
             commands.put("/mtguards info <id|name|label>", "Show guard info");
             commands.put("/mtguards setlabel <id|name|label> <newLabel>", "Set human-friendly label");
+            commands.put("/mtguards setname <id|name|label> <newName>", "Set guard display name with color codes");
             yaml.set("commands", commands);
 
             yaml.save(readme);

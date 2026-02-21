@@ -2,6 +2,7 @@ package com.metatask.mtguards;
 
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -16,27 +17,36 @@ import java.util.UUID;
 public class GuardManager {
 
     private final JavaPlugin plugin;
+    private final FileConfiguration config;
     private final NPCRegistry registry;
     private final Map<UUID, NPC> guards = new HashMap<>();
 
     public GuardManager(JavaPlugin plugin, NPCRegistry registry) {
         this.plugin = plugin;
         this.registry = registry;
+        this.config = plugin.getConfig();
+    }
+
+    public GuardManager(FileConfiguration config, NPCRegistry registry) {
+        this.plugin = null;
+        this.registry = registry;
+        this.config = config;
     }
 
     public NPC createGuard(Player creator, String name, Integer radiusOverride) {
-        FileConfiguration config = plugin.getConfig();
         int defaultRadius = config.getInt("guards.default.radius", 8);
         int radius = radiusOverride != null ? radiusOverride : defaultRadius;
 
-        NPC npc = registry.createNPC(EntityType.PLAYER, name);
+        String displayName = ChatColor.translateAlternateColorCodes('&', name);
+
+        NPC npc = registry.createNPC(EntityType.PLAYER, displayName);
         npc.addTrait(GuardTrait.class);
         npc.spawn(creator.getLocation());
 
         GuardTrait trait = npc.getTrait(GuardTrait.class);
         trait.setHome(creator.getLocation());
         trait.setRadius(radius);
-        trait.setLabel(name);
+        trait.setLabel(ChatColor.stripColor(displayName));
 
         guards.put(npc.getUniqueId(), npc);
         return npc;

@@ -1,6 +1,6 @@
 name: MTGuards
 main: com.metatask.mtguards.MTGuardsPlugin
-version: 1.0.0
+version: ${project.version}
 api-version: '1.20'
 author: Chris
 depend: [Citizens]
@@ -30,6 +30,7 @@ permissions:
       mtguards.admin.pattern: true
       mtguards.admin.info: true
       mtguards.admin.setlabel: true
+      mtguards.admin.setname: true
   mtguards.safe:
     default: false
   mtguards.hostile:

@@ -5,7 +5,7 @@
 
     <groupId>com.metatask</groupId>
     <artifactId>mtguards</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>MTGuards</name>
@@ -76,6 +76,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -92,6 +98,9 @@
                 <version>3.2.5</version>
                 <configuration>
                     <useModulePath>false</useModulePath>
+                    <systemPropertyVariables>
+                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

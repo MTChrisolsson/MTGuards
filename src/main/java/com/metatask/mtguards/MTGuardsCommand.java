@@ -35,7 +35,7 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.YELLOW + "Usage: /" + label + " <create|remove|list|reload|setradius|strict|attack|skin|equipweapon|equiparmor|stationary|pattern|info|setlabel>");
+            sender.sendMessage(ChatColor.YELLOW + "Usage: /" + label + " <create|remove|list|reload|setradius|strict|attack|skin|equipweapon|equiparmor|stationary|pattern|info|setlabel|setname>");
             return true;
         }
 
@@ -475,8 +475,33 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 GuardTrait trait = npc.getOrAddTrait(GuardTrait.class);
-                trait.setLabel(args[2]);
-                sender.sendMessage(ChatColor.GREEN + "Updated guard #" + npc.getId() + " label to " + args[2] + ".");
+                String newLabel = ChatColor.translateAlternateColorCodes('&', args[2]);
+                trait.setLabel(newLabel);
+                sender.sendMessage(ChatColor.GREEN + "Updated guard #" + npc.getId() + " label to " + newLabel + ".");
+                return true;
+            }
+            case "setname": {
+                if (!sender.hasPermission("mtguards.admin")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission.");
+                    return true;
+                }
+                if (args.length < 3) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /" + label + " setname <npcId|name|label> <newName>");
+                    return true;
+                }
+                NPC npc = resolveNpc(args[1]);
+                if (npc == null) {
+                    sender.sendMessage(ChatColor.RED + "NPC not found by id/name/label.");
+                    return true;
+                }
+                String newName = ChatColor.translateAlternateColorCodes('&', args[2]);
+                npc.setName(newName);
+                if (npc.isSpawned() && npc.getEntity() instanceof LivingEntity) {
+                    LivingEntity entity = (LivingEntity) npc.getEntity();
+                    entity.setCustomName(newName);
+                    entity.setCustomNameVisible(true);
+                }
+                sender.sendMessage(ChatColor.GREEN + "Updated guard #" + npc.getId() + " name to " + newName + ".");
                 return true;
             }
             default:
@@ -493,8 +518,9 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
     }
 
     private NPC resolveNpc(String token) {
+        String plainToken = ChatColor.stripColor(token);
         try {
-            int id = Integer.parseInt(token);
+            int id = Integer.parseInt(plainToken);
             NPC byId = guardManager.getRegistry().getById(id);
             if (byId != null) {
                 return byId;
@@ -502,7 +528,13 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
         } catch (NumberFormatException ignored) {}
         for (NPC npc : guardManager.getAllGuardNPCs()) {
             GuardTrait trait = npc.getOrAddTrait(GuardTrait.class);
-            if (npc.getName().equalsIgnoreCase(token) || (trait.getLabel() != null && trait.getLabel().equalsIgnoreCase(token))) {
+            String npcName = ChatColor.stripColor(npc.getName());
+            String labelText = trait.getLabel();
+            String plainLabel = labelText != null ? ChatColor.stripColor(labelText) : null;
+            if (npcName.equalsIgnoreCase(plainToken)
+                    || npc.getName().equalsIgnoreCase(token)
+                    || (plainLabel != null && plainLabel.equalsIgnoreCase(plainToken))
+                    || (labelText != null && labelText.equalsIgnoreCase(token))) {
                 return npc;
             }
         }
@@ -526,6 +558,7 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
             subs.add("pattern");
             subs.add("info");
             subs.add("setlabel");
+            subs.add("setname");
             if (sender.hasPermission("mtguards.admin")) {
                 subs.add("reload");
             }
@@ -542,7 +575,9 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                 || args[0].equalsIgnoreCase("equiparmor")
                 || args[0].equalsIgnoreCase("stationary")
                 || args[0].equalsIgnoreCase("pattern")
-                || args[0].equalsIgnoreCase("info"))) {
+                || args[0].equalsIgnoreCase("info")
+                || args[0].equalsIgnoreCase("setlabel")
+                || args[0].equalsIgnoreCase("setname"))) {
             List<String> tokens = new ArrayList<>();
             for (NPC npc : guardManager.getAllGuardNPCs()) {
                 tokens.add(String.valueOf(npc.getId()));

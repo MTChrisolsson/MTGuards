@@ -4,12 +4,11 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,22 +24,20 @@ import static org.mockito.Mockito.when;
 
 public class GuardManagerTest {
 
-    private JavaPlugin plugin;
+    private FileConfiguration config;
     private NPCRegistry registry;
     private GuardManager guardManager;
 
     @BeforeEach
     void setUp() {
-        plugin = mock(JavaPlugin.class, Mockito.RETURNS_DEEP_STUBS);
+        config = new YamlConfiguration();
         registry = mock(NPCRegistry.class);
-        guardManager = new GuardManager(plugin, registry);
+        guardManager = new GuardManager(config, registry);
     }
 
     @Test
     void createGuard_usesDefaultRadiusWhenOverrideNull() {
-        FileConfiguration config = mock(FileConfiguration.class);
-        when(plugin.getConfig()).thenReturn(config);
-        when(config.getInt("guards.default.radius", 8)).thenReturn(8);
+        config.set("guards.default.radius", 8);
 
         Player creator = mock(Player.class);
         when(creator.getLocation()).thenReturn(new Location(null, 0, 64, 0));
@@ -62,9 +59,7 @@ public class GuardManagerTest {
 
     @Test
     void createGuard_usesOverrideRadiusWhenProvided() {
-        FileConfiguration config = mock(FileConfiguration.class);
-        when(plugin.getConfig()).thenReturn(config);
-        when(config.getInt("guards.default.radius", 8)).thenReturn(8);
+        config.set("guards.default.radius", 8);
 
         Player creator = mock(Player.class);
         when(creator.getLocation()).thenReturn(new Location(null, 10, 70, -5));

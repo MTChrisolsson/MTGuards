@@ -103,7 +103,8 @@ public class GuardTrait extends Trait implements Runnable {
 
     private void scanAndAttack(LivingEntity self, Location base) {
         List<Entity> nearby = self.getNearbyEntities(scanRadius, scanRadius, scanRadius);
-        currentTargetId = null;
+        LivingEntity bestTarget = null;
+        double bestDistSq = Double.MAX_VALUE;
         for (Entity e : nearby) {
             if (!(e instanceof LivingEntity)) {
                 continue;
@@ -111,33 +112,57 @@ public class GuardTrait extends Trait implements Runnable {
             if (e == self) {
                 continue;
             }
-            if (!isTargetAllowed((LivingEntity) e, base)) {
+            LivingEntity candidate = (LivingEntity) e;
+            if (!isTargetAllowed(candidate, base)) {
                 continue;
             }
             if (!e.getWorld().equals(base.getWorld())) {
                 continue;
             }
-            if (!stationary) {
-                boolean needNavigate = !npc.getNavigator().isNavigating() || !e.getUniqueId().equals(currentTargetId);
-                if (needNavigate) {
-                    npc.getNavigator().getLocalParameters().speed(walkSpeed);
-                    npc.getNavigator().setTarget(e, true);
-                }
+            double dist = self.getLocation().distanceSquared(candidate.getLocation());
+            if (dist < bestDistSq) {
+                bestDistSq = dist;
+                bestTarget = candidate;
             }
-            currentTargetId = e.getUniqueId();
-            double dist = self.getLocation().distanceSquared(e.getLocation());
-            if (dist <= 4.0) {
-                long now = System.currentTimeMillis();
-                if (now - lastAttackTime >= attackCooldownMs) {
-                    if (self instanceof HumanEntity) {
-                        ((HumanEntity) self).swingMainHand();
-                    }
-                    self.attack(e);
-                    lastAttackTime = now;
-                }
-            }
+        }
+        if (bestTarget == null) {
+            currentTargetId = null;
             return;
         }
+        if (!stationary) {
+            boolean needNavigate = !npc.getNavigator().isNavigating() || !bestTarget.getUniqueId().equals(currentTargetId);
+            if (needNavigate) {
+                navigateToTarget(self, bestTarget);
+            }
+        }
+        currentTargetId = bestTarget.getUniqueId();
+        if (bestDistSq <= 4.0) {
+            long now = System.currentTimeMillis();
+            if (now - lastAttackTime >= attackCooldownMs) {
+                if (self instanceof HumanEntity) {
+                    ((HumanEntity) self).swingMainHand();
+                }
+                self.attack(bestTarget);
+                lastAttackTime = now;
+            }
+        }
+    }
+
+    private void navigateToTarget(LivingEntity self, LivingEntity target) {
+        Location targetLoc = target.getLocation();
+        Location from = self.getLocation();
+        Location navTarget = targetLoc;
+        double dx = targetLoc.getX() - from.getX();
+        double dz = targetLoc.getZ() - from.getZ();
+        double horizontalDist = Math.sqrt(dx * dx + dz * dz);
+        double dy = from.getY() - targetLoc.getY();
+        if (dy >= 0.9 && horizontalDist <= 2.5) {
+            Location ground = targetLoc.clone();
+            ground.setY(self.getWorld().getHighestBlockYAt(ground) + 1.0);
+            navTarget = ground;
+        }
+        npc.getNavigator().getLocalParameters().speed(walkSpeed);
+        npc.getNavigator().setTarget(navTarget);
     }
 
     private boolean isTargetAllowed(LivingEntity target, Location base) {
