@@ -1,0 +1,5 @@
+com\metatask\mtguards\MTGuardsPlugin.class
+com\metatask\mtguards\GuardTrait.class
+com\metatask\mtguards\MTGuardsCommand.class
+com\metatask\mtguards\ReadmeYmlWriter.class
+com\metatask\mtguards\GuardManager.class

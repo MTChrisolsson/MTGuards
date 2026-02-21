@@ -1,0 +1,24 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to rollback (development, staging, production)"
+        required: true
+        default: "staging"
+      version:
+        description: "Tag or version to rollback to (e.g. v1.0.0)"
+        required: true
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Show rollback information
+        run: |
+          echo "Requesting rollback of MTGuards in environment '${{ github.event.inputs.environment }}' to version '${{ github.event.inputs.version }}'."
+          echo "Use this job as the automation hook to redeploy the selected release artifact to your servers or package registry."
+

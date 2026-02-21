@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (overrides tag when set)"
+        required: false
+
+jobs:
+  build:
+    name: Build plugin jar
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build without tests
+        run: mvn -B -DskipTests package
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mtguards-jar
+          path: target/MTGuards-*.jar
+
+  create_release:
+    name: Create GitHub release with artifact
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mtguards-jar
+          path: dist
+
+      - name: Determine release version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "value=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            ref="${GITHUB_REF#refs/tags/}"
+            echo "value=${ref}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.value }}
+          name: MTGuards ${{ steps.version.outputs.value }}
+          files: dist/MTGuards-*.jar
+          draft: false
+          prerelease: false
+
+  deploy:
+    name: Deploy to environments
+    needs: create_release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+
+    environment: ${{ matrix.environment }}
+
+    steps:
+      - name: Mark deployment
+        run: |
+          echo "Deploying MTGuards version ${{ github.ref_name }} to ${{ matrix.environment }} environment"
+

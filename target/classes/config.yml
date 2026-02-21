@@ -1,0 +1,16 @@
+guards:
+  default:
+    radius: 8
+    strictRadius: false
+    attackPassive: true
+    attackHostile: true
+    attackPlayers: false
+    attackPlayersWithPermission: mtguards.hostile
+    neverAttackOps: true
+    safePlayerPermission: mtguards.safe
+
+behavior:
+  tickInterval: 20
+  targetScanRadius: 10
+  walkSpeed: 1.2
+  attackCooldownMs: 500
