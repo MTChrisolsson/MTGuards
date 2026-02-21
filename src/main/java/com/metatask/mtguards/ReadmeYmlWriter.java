@@ -63,6 +63,7 @@ public class ReadmeYmlWriter {
             permissions.put("mtguards.admin.setname", "Change guard display name");
             permissions.put("mtguards.safe", "Players with this are never attacked");
             permissions.put("mtguards.hostile", "Players with this may be attacked when attackPlayers=false");
+            permissions.put("mtguards.admin.teleport", "Teleport a guard to a location or player");
             yaml.set("permissions", permissions);
 
             Map<String, Object> commands = new LinkedHashMap<>();
@@ -81,6 +82,8 @@ public class ReadmeYmlWriter {
             commands.put("/mtguards info <id|name|label>", "Show guard info");
             commands.put("/mtguards setlabel <id|name|label> <newLabel>", "Set human-friendly label");
             commands.put("/mtguards setname <id|name|label> <newName>", "Set guard display name with color codes");
+            commands.put("/mtguards teleport <id|name|label> here", "Teleport guard to your current location (included pitch & yaw)");
+            commands.put("/mtguards teleport <id|name|label> <world> <x> <y> <z> [yaw] [pitch]", "Teleport guard to a location (optional yaw & pitch)");
             yaml.set("commands", commands);
 
             yaml.save(readme);

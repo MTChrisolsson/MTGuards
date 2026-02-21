@@ -31,6 +31,7 @@ permissions:
       mtguards.admin.info: true
       mtguards.admin.setlabel: true
       mtguards.admin.setname: true
+      mtguards.admin.teleport: true
   mtguards.safe:
     default: false
   mtguards.hostile:

@@ -78,6 +78,8 @@ public class GuardManager {
         return found;
     }
 
+    
+
     public void shutdown() {
         for (NPC npc : guards.values()) {
             if (npc.isSpawned()) {

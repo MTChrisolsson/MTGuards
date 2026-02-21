@@ -35,7 +35,7 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.YELLOW + "Usage: /" + label + " <create|remove|list|reload|setradius|strict|attack|skin|equipweapon|equiparmor|stationary|pattern|info|setlabel|setname>");
+            sender.sendMessage(ChatColor.YELLOW + "Usage: /" + label + " <create|remove|list|reload|setradius|strict|attack|skin|equipweapon|equiparmor|stationary|pattern|info|setlabel|setname|teleport>");
             return true;
         }
 
@@ -504,6 +504,75 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.GREEN + "Updated guard #" + npc.getId() + " name to " + newName + ".");
                 return true;
             }
+
+            case "teleport": {
+                if (!sender.hasPermission("mtguards.admin.teleport")) {
+                    sender.sendMessage(ChatColor.RED + "You do not have permission to teleport guards.");
+                    return true;
+                }
+                if (args.length < 3) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /" + label + " teleport <npcId|name|label> here");
+                    return true;
+                }
+                NPC npc = resolveNpc(args[1]);
+                if (npc == null) {
+                    sender.sendMessage(ChatColor.RED + "NPC not found by id/name/label.");
+                    return true;
+                }
+
+                String mode = args[2].toLowerCase(Locale.ROOT);
+                if (mode.equals("here")) {
+                    if (!(sender instanceof Player)) {
+                        sender.sendMessage(ChatColor.RED + "You must be a player to use this command.");
+                        return true;
+                    }
+                    Player player = (Player) sender;
+                    Location loc = player.getLocation();
+                    teleportGuard(npc, loc);
+                    sender.sendMessage(ChatColor.GREEN + "Teleported guard #" + npc.getId() + " to your location.");
+                    return true;
+                }
+
+                if (args.length < 7) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /" + label + " teleport <npcId|name|label> <world> <x> <y> <z> [yaw] [pitch]");
+                    return true;
+                }
+
+                String worldName = args[2];
+                org.bukkit.World world = Bukkit.getWorld(worldName);
+                if (world == null) {
+                    sender.sendMessage(ChatColor.RED + "World not found.");
+                    return true;
+                }
+
+                double x, y, z;
+                try {
+                    x = Double.parseDouble(args[3]);
+                    y = Double.parseDouble(args[4]);
+                    z = Double.parseDouble(args[5]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.RED + "Invalid x, y, or z coordinates.");
+                    return true;
+                }
+
+                float yaw = 0f;
+                float pitch = 0f;
+                if (args.length >= 7) {
+                    try {
+                        yaw = Float.parseFloat(args[6]);
+                    } catch (NumberFormatException ignore) {}
+                }
+                if (args.length >= 8) {
+                    try {
+                        pitch = Float.parseFloat(args[7]);
+                    } catch (NumberFormatException ignore) {}
+                }
+                Location loc = new Location(world, x, y, z, yaw, pitch);
+                teleportGuard(npc, loc);
+                sender.sendMessage(ChatColor.GREEN + "Teleported guard #" + npc.getId() + " to " + loc.toString() + ".");
+                return true;
+            }
+
             default:
                 sender.sendMessage(ChatColor.RED + "Unknown subcommand.");
                 return true;
@@ -609,5 +678,16 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                     .collect(Collectors.toList());
         }
         return new ArrayList<>();
+    }
+
+    private void teleportGuard(NPC npc, Location target) {
+        npc.teleport(target, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN);
+        if (npc.isSpawned() && npc.getEntity() instanceof LivingEntity) {
+            LivingEntity entity = (LivingEntity) npc.getEntity();
+            entity.teleport(target); // ensures yaw/pitch are applied to the entity model (head/jaw direction)
+        }
+
+        GuardTrait trait = npc.getOrAddTrait(GuardTrait.class);
+        trait.setHome(target);
     }
 }
