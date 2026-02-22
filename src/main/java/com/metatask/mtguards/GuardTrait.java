@@ -11,11 +11,18 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Base64;
 
 public class GuardTrait extends Trait implements Runnable {
 
@@ -38,6 +45,11 @@ public class GuardTrait extends Trait implements Runnable {
     private float walkSpeed = 1.2F;
     private int attackCooldownMs = 500;
     private String label;
+    private ItemStack savedHelmet;
+    private ItemStack savedChest;
+    private ItemStack savedLegs;
+    private ItemStack savedBoots;
+    private ItemStack savedMainHand;
 
     public GuardTrait() {
         super("mtguard");
@@ -284,6 +296,17 @@ public class GuardTrait extends Trait implements Runnable {
         if (label == null) {
             label = npc.getName();
         }
+        if (npc.isSpawned() && npc.getEntity() instanceof LivingEntity) {
+            LivingEntity le = (LivingEntity) npc.getEntity();
+            EntityEquipment eq = le.getEquipment();
+            if (eq != null) {
+                if (savedHelmet != null) eq.setHelmet(savedHelmet.clone());
+                if (savedChest != null) eq.setChestplate(savedChest.clone());
+                if (savedLegs != null) eq.setLeggings(savedLegs.clone());
+                if (savedBoots != null) eq.setBoots(savedBoots.clone());
+                if (savedMainHand != null) eq.setItemInMainHand(savedMainHand.clone());
+            }
+        }
     }
 
     @Override
@@ -421,6 +444,16 @@ public class GuardTrait extends Trait implements Runnable {
         if (lbl != null && !lbl.isEmpty()) {
             this.label = lbl;
         }
+        String h = key.getString("equipment.helmet");
+        String c = key.getString("equipment.chest");
+        String l = key.getString("equipment.legs");
+        String b = key.getString("equipment.boots");
+        String m = key.getString("equipment.mainhand");
+        if (h != null && !h.isEmpty()) savedHelmet = deserializeItem(h);
+        if (c != null && !c.isEmpty()) savedChest = deserializeItem(c);
+        if (l != null && !l.isEmpty()) savedLegs = deserializeItem(l);
+        if (b != null && !b.isEmpty()) savedBoots = deserializeItem(b);
+        if (m != null && !m.isEmpty()) savedMainHand = deserializeItem(m);
     }
 
     @Override
@@ -435,6 +468,11 @@ public class GuardTrait extends Trait implements Runnable {
         key.setString("safePlayerPermission", safePlayerPermission);
         key.setString("attackPlayersPermission", attackPlayersPermission);
         key.setString("label", label);
+        key.setString("equipment.helmet", serializeItem(savedHelmet));
+        key.setString("equipment.chest", serializeItem(savedChest));
+        key.setString("equipment.legs", serializeItem(savedLegs));
+        key.setString("equipment.boots", serializeItem(savedBoots));
+        key.setString("equipment.mainhand", serializeItem(savedMainHand));
     }
 
     public String getLabel() {
@@ -443,5 +481,65 @@ public class GuardTrait extends Trait implements Runnable {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public void setSavedArmor(ItemStack helmet, ItemStack chest, ItemStack legs, ItemStack boots) {
+        this.savedHelmet = cloneOrNull(helmet);
+        this.savedChest = cloneOrNull(chest);
+        this.savedLegs = cloneOrNull(legs);
+        this.savedBoots = cloneOrNull(boots);
+        if (npc != null && npc.isSpawned() && npc.getEntity() instanceof LivingEntity) {
+            LivingEntity le = (LivingEntity) npc.getEntity();
+            EntityEquipment eq = le.getEquipment();
+            if (eq != null) {
+                eq.setHelmet(savedHelmet);
+                eq.setChestplate(savedChest);
+                eq.setLeggings(savedLegs);
+                eq.setBoots(savedBoots);
+            }
+        }
+    }
+
+    public void setSavedMainHand(ItemStack item) {
+        this.savedMainHand = cloneOrNull(item);
+        if (npc != null && npc.isSpawned() && npc.getEntity() instanceof LivingEntity) {
+            LivingEntity le = (LivingEntity) npc.getEntity();
+            EntityEquipment eq = le.getEquipment();
+            if (eq != null) {
+                eq.setItemInMainHand(savedMainHand);
+            }
+        }
+    }
+
+    private ItemStack cloneOrNull(ItemStack item) {
+        if (item == null) return null;
+        return item.clone();
+    }
+
+    private String serializeItem(ItemStack item) {
+        try {
+            if (item == null) return "";
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BukkitObjectOutputStream oos = new BukkitObjectOutputStream(out);
+            oos.writeObject(item);
+            oos.flush();
+            return Base64.getEncoder().encodeToString(out.toByteArray());
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private ItemStack deserializeItem(String data) {
+        try {
+            if (data == null || data.isEmpty()) return null;
+            byte[] bytes = Base64.getDecoder().decode(data);
+            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+            BukkitObjectInputStream ois = new BukkitObjectInputStream(in);
+            Object obj = ois.readObject();
+            if (obj instanceof ItemStack) {
+                return (ItemStack) obj;
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 }

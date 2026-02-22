@@ -243,48 +243,51 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "equipweapon": {
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage(ChatColor.RED + "Only players can equip guards.");
-                    return true;
-                }
-                if (!sender.hasPermission("mtguards.admin")) {
-                    sender.sendMessage(ChatColor.RED + "You do not have permission.");
-                    return true;
-                }
-                if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "Usage: /" + label + " equipweapon <npcId>");
-                    return true;
-                }
-                int id;
-                try {
-                    id = Integer.parseInt(args[1]);
-                } catch (NumberFormatException ex) {
-                    sender.sendMessage(ChatColor.RED + "npcId must be a number.");
-                    return true;
-                }
-                Player player = (Player) sender;
-                ItemStack inHand = player.getInventory().getItemInMainHand();
-                if (inHand == null || inHand.getType().isAir()) {
-                    sender.sendMessage(ChatColor.RED + "You must hold a weapon in your main hand.");
-                    return true;
-                }
-                NPC npc = guardManager.getRegistry().getById(id);
-                if (npc == null) {
-                    sender.sendMessage(ChatColor.RED + "NPC not found.");
-                    return true;
-                }
-                if (!npc.isSpawned() || !(npc.getEntity() instanceof LivingEntity)) {
-                    sender.sendMessage(ChatColor.RED + "Guard must be spawned to equip items.");
-                    return true;
-                }
-                LivingEntity entity = (LivingEntity) npc.getEntity();
-                EntityEquipment eq = entity.getEquipment();
-                if (eq != null) {
-                    eq.setItemInMainHand(inHand.clone());
-                }
-                sender.sendMessage(ChatColor.GREEN + "Equipped guard #" + id + " with your held item.");
-                return true;
-            }
+    if (!(sender instanceof Player)) {
+        sender.sendMessage(ChatColor.RED + "Only players can equip guards.");
+        return true;
+    }
+    if (!sender.hasPermission("mtguards.admin")) {
+        sender.sendMessage(ChatColor.RED + "You do not have permission.");
+        return true;
+    }
+    if (args.length < 2) {
+        sender.sendMessage(ChatColor.RED + "Usage: /" + label + " equipweapon <npcId>");
+        return true;
+    }
+    int id;
+    try {
+        id = Integer.parseInt(args[1]);
+    } catch (NumberFormatException ex) {
+        sender.sendMessage(ChatColor.RED + "npcId must be a number.");
+        return true;
+    }
+    Player player = (Player) sender;
+    ItemStack inHand = player.getInventory().getItemInMainHand();
+    if (inHand == null || inHand.getType().isAir()) {
+        sender.sendMessage(ChatColor.RED + "You must hold a weapon in your main hand.");
+        return true;
+    }
+    NPC npc = guardManager.getRegistry().getById(id);
+    if (npc == null) {
+        sender.sendMessage(ChatColor.RED + "NPC not found.");
+        return true;
+    }
+    if (!npc.isSpawned() || !(npc.getEntity() instanceof LivingEntity)) {
+        sender.sendMessage(ChatColor.RED + "Guard must be spawned to equip items.");
+        return true;
+    }
+    LivingEntity entity = (LivingEntity) npc.getEntity();
+    EntityEquipment eq = entity.getEquipment();
+    if (eq != null) {
+        ItemStack clone = inHand.clone();
+        eq.setItemInMainHand(clone);
+        GuardTrait trait = npc.getOrAddTrait(GuardTrait.class);
+        trait.setSavedMainHand(clone);
+    }
+    sender.sendMessage(ChatColor.GREEN + "Equipped guard #" + id + " with your held item.");
+    return true;
+}
             case "equiparmor": {
                 if (!(sender instanceof Player)) {
                     sender.sendMessage(ChatColor.RED + "Only players can equip guards.");
@@ -316,15 +319,21 @@ public class MTGuardsCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 LivingEntity entity = (LivingEntity) npc.getEntity();
-                EntityEquipment eq = entity.getEquipment();
-                if (eq != null) {
-                    eq.setHelmet(cloneOrNull(player.getInventory().getHelmet()));
-                    eq.setChestplate(cloneOrNull(player.getInventory().getChestplate()));
-                    eq.setLeggings(cloneOrNull(player.getInventory().getLeggings()));
-                    eq.setBoots(cloneOrNull(player.getInventory().getBoots()));
-                }
-                sender.sendMessage(ChatColor.GREEN + "Equipped guard #" + id + " with your armor.");
-                return true;
+EntityEquipment eq = entity.getEquipment();
+ItemStack helmet = cloneOrNull(player.getInventory().getHelmet());
+ItemStack chest = cloneOrNull(player.getInventory().getChestplate());
+ItemStack legs = cloneOrNull(player.getInventory().getLeggings());
+ItemStack boots = cloneOrNull(player.getInventory().getBoots());
+if (eq != null) {
+    eq.setHelmet(helmet);
+    eq.setChestplate(chest);
+    eq.setLeggings(legs);
+    eq.setBoots(boots);
+}
+GuardTrait trait = npc.getOrAddTrait(GuardTrait.class);
+trait.setSavedArmor(helmet, chest, legs, boots);
+sender.sendMessage(ChatColor.GREEN + "Equipped guard #" + id + " with your armor.");
+return true;
             }
             case "stationary": {
                 if (!sender.hasPermission("mtguards.admin")) {
