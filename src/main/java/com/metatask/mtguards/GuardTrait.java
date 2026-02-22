@@ -401,7 +401,7 @@ public class GuardTrait extends Trait implements Runnable {
     public boolean hasPattern() {
         return !pattern.isEmpty();
     }
-
+    // Patrol the guard to the next location in the pattern
     private void patrol(LivingEntity self) {
         if (pattern.isEmpty()) {
             return;
